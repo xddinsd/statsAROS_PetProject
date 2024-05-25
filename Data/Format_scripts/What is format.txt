@@ -1,0 +1,1 @@
+Format is an opperation to get from parsed txt csv with data we need
