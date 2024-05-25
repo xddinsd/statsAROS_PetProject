@@ -18,7 +18,7 @@ class DfServices:
             return None
         
         # Creating a path
-        path = f"Data\\{year}-{year+1}\\{subjectName}.csv"
+        path = f"./Data/{year}-{year+1}/{subjectName}.csv"
         
         # Parsing csv
         try:
