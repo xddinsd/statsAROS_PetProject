@@ -13,7 +13,7 @@ class cohort_Statistics:
         ''' Main function that calculates stat for a cohort of prizes last year and cohort of others'''
         strListResult : List[str] = [] # Contains all stat data 
         grade_start = grade - 1 
-        year_start = year - 2 # for ex: 21-22 => year = 22 => year_start = 21
+        year_start = year - 2 # for ex: 21-22 => year = 22 => year_start = 20
         
         
 
