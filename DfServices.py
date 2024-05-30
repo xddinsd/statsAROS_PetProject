@@ -23,7 +23,7 @@ class DfServices:
         # Parsing csv
         try:
             df = pd.read_csv(path, sep=" ")
-        except:
+        except Exception:
             DfServices.reportBUG("Can't parse", f"Year is {year}, subject is {subjectName}")
             return None
         else:
@@ -47,7 +47,7 @@ class DfServices:
         '''Input: Cohord DF and next year DF Output: DF with last year and DF with others'''
 
         cohort_Prizes = cohort_df[cohort_df['Result'] == 'prize']
-        cohort_Prizes_Names = set(cohort_Prizes['Name']) # set to check if in quickly
+        cohort_Prizes_Names = set(cohort_Prizes['Name']) # set to check if in quickly  # noqa: F841
         
         prizesInNextYear = nextYear_df.query('Name in @cohort_Prizes_Names')
         othersInNextYear = nextYear_df.query('Name not in @cohort_Prizes_Names')
@@ -90,7 +90,7 @@ class DfServices:
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3, 3))
 
         # confidence intervals plot
-        bplot2 = ax.errorbar(x=df.index, 
+        ax.errorbar(x=df.index, 
                              y=df['Mx'], 
                              yerr=df['interval'],
                             color="black", 

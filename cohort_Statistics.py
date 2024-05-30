@@ -1,6 +1,6 @@
-import math
-import numpy as np
-import pandas as pd
+'''Main statistics file with cohort_stat function that calculates stat for a cohort of last year prizes'''
+
+
 import seaborn as sns
 from scipy import stats as st
 import statsmodels.api as sm
@@ -25,7 +25,7 @@ class cohort_Statistics:
         
         # Making a histogramm
         histPlotFig, axs = plt.subplots(ncols=1)
-        histPlot = sns.histplot(DfServices.twoSeriesToSnsData(
+        sns.histplot(DfServices.twoSeriesToSnsData(
                 scoresOthers.sample(n = scoresPrizes.size), 'Others', 
                 scoresPrizes, 'Prizes'),
                     bins = scoresPrizes.size, 
@@ -40,8 +40,8 @@ class cohort_Statistics:
         
         strListResult.append((f"Mean of last year prizes' scores is {round(meanPrizes, 4)}"))
         strListResult.append((f"Mean others' scores is {round(othersPrizes, 4)}"))
-        strListResult.append((f"    H_0: Actually MeanP == MeanO"))
-        strListResult.append((f"    H_1: Not equal"))
+        strListResult.append(("    H_0: Actually MeanP == MeanO"))
+        strListResult.append(("    H_1: Not equal"))
         strListResult.append(' ')
         
         # If normal and variances are close to each others -> use T-Test & KS-test
@@ -99,12 +99,11 @@ class cohort_Statistics:
             
         # Perfoming a boxplot and graph of qqPLOT for levene or confidence interval plot if possible 
         boxPlotFig, axs = plt.subplots(ncols=1)
-        boxPlot = sns.boxplot(
+        sns.boxplot(
                                 data = DfServices.twoSeriesToSnsData(
                                     scoresOthers, 'Others', scoresPrizes, 'Prizes last year')
                             )
         
-        mainPlotFig = None
         if use_T_Test:
             
             # Creating a CI-Plot
