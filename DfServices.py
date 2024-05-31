@@ -2,6 +2,7 @@ import pandas as pd
 import seaborn as sns 
 from matplotlib import pyplot as plt
 import scipy.stats as st
+from typing import Iterable
 
 class DfServices:
     
@@ -111,3 +112,32 @@ class DfServices:
         snsData1 = pd.Series(series1, name = name1)
         snsData2 = pd.Series(series2, name = name2)
         return pd.concat([snsData1, snsData2], axis = 1)
+    
+    def calculatePercentiles(series1 : Iterable[int], series2 : Iterable[int]) -> (pd.Series, pd.Series):
+        '''Calculates percentile rank for two iterables of prizes and others'''
+        
+        # Series => Df of concatted
+        series1Df = pd.DataFrame(
+            {
+                'Score':series1, 
+                'whichDf':['series1'] * len(series1)
+            })
+        series2Df = pd.DataFrame(
+            {
+                'Score':series2, 
+                'whichDf':['series2'] * len(series2)
+                })
+        fullSeries = pd.concat([series1Df, series2Df])
+        
+        # Sort to rank
+        fullSeries = fullSeries.sort_values('Score', ascending=True)
+        fullSeries['Rank'] = [i + 1 for i in range(len(fullSeries))]
+
+        # Calculating percentile
+        N = len(fullSeries)
+        fullSeries['Percentile'] = fullSeries['Rank'] / N
+
+        # Getting data from fullSeries
+        percentile1 = fullSeries[fullSeries['whichDf'] == 'series1']['Percentile']
+        percentile2 = fullSeries[fullSeries['whichDf'] == 'series2']['Percentile']
+        return percentile1, percentile2

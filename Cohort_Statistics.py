@@ -7,28 +7,51 @@ import statsmodels.api as sm
 from matplotlib import pyplot as plt
 from DfServices import DfServices
 
-from typing import Tuple, List
-class cohort_Statistics:
-    def cohort_Stat(grade : int, year : int, subjectName : str) -> Tuple[List[str], str, plt.Figure, plt.Figure]:
-        ''' Main function that calculates stat for a cohort of prizes last year and cohort of others'''
-        strListResult : List[str] = [] # Contains all stat data 
+from typing import Tuple, List, Callable
+
+class Cohort_Statistics:
+    def getMeanData(grade: int, year: int, subjectName : str):
+        '''Returns mean hypotesis data for cohort_stat'''
         grade_start = grade - 1 
         year_start = year - 2 # for ex: 21-22 => year = 22 => year_start = 20
         
-        
-
         # Get prizes and cohort data
         cohort_df, nextYear_df = DfServices.getCohort_and_NextYearDf(grade_start, year_start, subjectName)
         prizesInNextYear, othersInNextYear = DfServices.getPrizesOthers(cohort_df, nextYear_df)
+        
+        # Get its scores
         scoresPrizes = prizesInNextYear["Score"]
         scoresOthers = othersInNextYear["Score"]
+
+        return scoresPrizes, scoresOthers
+
+    def getPercentileData():
+        '''Returns percentile hypotesis data for cohort_stat'''
+        scoresPrizes, scoresOthers = [], []
+        for subjectName in ['Math', 'Economics', 'Physics']:
+            for year in [23, 24]:
+                for grade in [10, 11]:
+                    tt_scoresPrizes, tt_scoresOthers = Cohort_Statistics.getMeanData(grade, year, subjectName)
+                    scoresPrizes += tt_scoresPrizes.tolist()
+                    scoresOthers += tt_scoresOthers.tolist()
+
+        scoresPrizes, scoresOthers = DfServices.calculatePercentiles(scoresPrizes, scoresOthers)
+        
+        return scoresPrizes, scoresOthers
+
+    def cohortStat(getData : Callable, percentileCalc=False) -> Tuple[List[str], str, plt.Figure, plt.Figure]:
+        ''' Calculates mean/percentile stat for a cohort of prizes last year and cohort of others. Be sure to select the getData function from Cohort_Statistics class'''
+        
+        strListResult : List[str] = [] # Contains all stat logs.
+
+        scoresPrizes, scoresOthers = getData
         
         # Making a histogramm
         histPlotFig, axs = plt.subplots(ncols=1)
         sns.histplot(DfServices.twoSeriesToSnsData(
                 scoresOthers.sample(n = scoresPrizes.size), 'Others', 
                 scoresPrizes, 'Prizes'),
-                    bins = scoresPrizes.size, 
+                    bins = 30, 
                     stat='density', kde = True,
                     ).get_figure()
         # DfServices.histTwo(scoresOthers, scoresPrizes, 'Blue', 'Black')
