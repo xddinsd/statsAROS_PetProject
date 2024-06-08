@@ -2,40 +2,51 @@ import time
 import streamlit as slit
 from Cohort_Statistics import Cohort_Statistics
 from typing import List
-
+from DfServices import DfServicesModule, Visuals
 
 def getMeanStat(grade, year, subjectName):
     # Stat for hypotesis 1
-    stat = Cohort_Statistics.cohortStat(getData = Cohort_Statistics.getMeanData(grade, year, subjectName))
+    scatterPlotFig = Visuals.makeScatterPlot(scatterData = 
+        DfServicesModule.getScatterData(grade, year, subjectName))
+    stat = Cohort_Statistics.cohortStat(
+        DfServicesModule.getMeanData(grade, year, subjectName))
     
     color = 'red' if grade == 10 else 'blue'
     
     # Headers
     slit.header(f'{grade} grade', divider= color)
 
-    return stat, color
+    return stat, color, scatterPlotFig
 
 def getPercentileStat():
     # Stat for hypotesis 2
-    stat = Cohort_Statistics.cohortStat(getData = Cohort_Statistics.getPercentileData())
+    scatterPlotFig = Visuals.makeScatterPlot(
+        scatterData = DfServicesModule.getCompleteScatterData())
+    stat = Cohort_Statistics.cohortStat(
+        DfServicesModule.getPercentileData())
 
     color = 'rainbow'
     
-    return stat, color
+    return stat, color, scatterPlotFig
 
 def writeColumn(getStatData):
     '''Fuction to add info to a streamlit column'''
 
     # Calculating stats
-    stat, color = getStatData
-    resultList, result, histPlotFig, barPlotFig, qqOrCiFig = stat
+    stat, color, scatterPlotFig = getStatData
+    
 
-    slit.subheader(f'Result is {result}')
+    slit.subheader(f'Result is {stat.boolResult}')
     # Visuals
     slit.markdown(f"#### :{color}-background[Visuals:]")
-    slit.pyplot(histPlotFig)
-    slit.pyplot(barPlotFig)
-    slit.pyplot(qqOrCiFig)
+    slit.write('* ScatterPlot for prizes\' percentiles year ago and now')
+    slit.pyplot(scatterPlotFig)
+    slit.write('* HistPlot for last year prizes and others in current year')
+    slit.pyplot(stat.histPlotFig)
+    slit.write('* Same but BoxPlot')
+    slit.pyplot(stat.boxPlotFig)
+    slit.write('* Confidence interval plot(T-test) or QQ-plot: red line is norm.(No T-Test)')
+    slit.pyplot(stat.qqOrCIPlotFig)
     slit.divider()
     # Statistics
     slit.markdown(f"#### :{color}-background[Statistics:]")
@@ -45,7 +56,8 @@ def writeColumn(getStatData):
         for line in list:
             yield line + '\n\n'
             time.sleep(0.05)
-    slit.write_stream(stream_data(resultList))
+    
+    slit.write_stream(stream_data(stat.logs))
 
 if __name__ == "__main__":
 
