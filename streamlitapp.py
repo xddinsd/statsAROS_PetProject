@@ -1,6 +1,8 @@
+'''Streamlit Dashboard'''
+
 import time
 import streamlit as slit
-from Cohort_Statistics import Cohort_Statistics
+import Cohort_Statistics
 from typing import List
 from DfServices import DfServicesModule, Visuals
 

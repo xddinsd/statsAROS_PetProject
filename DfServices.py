@@ -73,7 +73,7 @@ class DfServicesModule:
     
     def getScatterData(grade, year, subjectName) -> pd.DataFrame:
         '''
-        result: namedtuple('Percentiles', 'prizesLastYear prizes')
+        result: perentiles DF (Name, percentiles year 1, percentiles year 2)
         '''
         grade_start = grade - 1 
         year_start = year - 2
@@ -107,6 +107,10 @@ class DfServicesModule:
         return percentiles
     
     def getCompleteScatterData() -> pd.DataFrame:
+        '''
+        uses DfServicesModule.getScaterData() to calculate percentiles for all grades, years, subjectNames
+        result: perentiles DF (Name, percentiles year 1, percentiles year 2)
+        '''
         to_concat = []
         for year in [23, 24]:
             for grade in [10, 11]:
@@ -212,7 +216,7 @@ class Visuals:
     
     def makeScatterPlot(scatterData : pd.DataFrame) -> plt.Figure:
         '''
-        Input: DFServices.DFServices getScatterData() or getCompleteScatterData()
+        Input: DFServices.DfServicesModule getScatterData() or getCompleteScatterData()
         '''
         
 
