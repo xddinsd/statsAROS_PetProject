@@ -124,7 +124,8 @@ class Cohort_Statistics:
             qqOrCIPlotFig = sm.qqplot(
                 st.zscore(
                     scoresOthers.sample(n = scoresPrizes.size)), 
-                line='s', ax=axs, alpha = 0.4)
+                line='s', ax=axs, 
+                markerfacecolor='lightblue', alpha = 0.4)
             
         # Output the result data
         logs.append(' ')
