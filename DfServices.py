@@ -165,7 +165,7 @@ class StatTests:
     
     def isNormal(array1) -> bool:
         '''Check if normal using Shapiro-Wilk criteria for normality'''
-        p_value = st.kstest(array1, 'norm').pvalue
+        p_value = st.normaltest(array1, 'norm').pvalue
         if p_value > 0.05:
             return True
         else:
