@@ -55,7 +55,7 @@ class Cohort_Statistics:
                 or  
                 not (StatTests.isNormal(scoresOthers))
             ):
-            logs.append("     | Shapiro-Wilk for norm. failed: One of the distributions is not normal")
+            logs.append("     | KSTest for normality failed: One of the distributions is not normal")
             use_T_Test = False
         elif not StatTests.isVarCloseEOLevene(scoresOthers, scoresPrizes): # elif because levene's test assume that distribution is normal
             logs.append("     | Levene failed: Variances are not close to EO")
@@ -79,7 +79,7 @@ class Cohort_Statistics:
         # Performing a T-Test:
         if use_T_Test:
             logs.append('      ...')
-            logs.append('     Passed! | Levene | Shapiro-Wilk ')
+            logs.append('     Passed! | Levene | KSTest for normality')
             logs.append(' ')
             logs.append('Performing a T-Test:')
             p_value = st.ttest_ind(scoresOthers.sample(n = scoresPrizes.size), 
@@ -116,9 +116,15 @@ class Cohort_Statistics:
             
             qqOrCIPlotFig, axs = plt.subplots(ncols=1)
             #Levene or SW failed so qq-plot:
-            qqOrCIPlotFig = sm.qqplot(st.zscore(scoresPrizes), line='s', ax=axs)
-            qqOrCIPlotFig.set_alpha(0.1)
-            qqOrCIPlotFig = sm.qqplot(st.zscore(scoresOthers.sample(n = scoresPrizes.size)), line='s', ax=axs)
+            qqOrCIPlotFig = sm.qqplot(
+                st.zscore(scoresPrizes), 
+                line='s', ax=axs, 
+                markerfacecolor='orange', markeredgecolor='k', alpha = 0.6)
+
+            qqOrCIPlotFig = sm.qqplot(
+                st.zscore(
+                    scoresOthers.sample(n = scoresPrizes.size)), 
+                line='s', ax=axs, alpha = 0.4)
             
         # Output the result data
         logs.append(' ')
