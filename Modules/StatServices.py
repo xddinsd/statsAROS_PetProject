@@ -5,7 +5,7 @@ import scipy.stats as st
 from typing import Iterable
 from collections import namedtuple
 
-class DfServicesModule:
+class DfServices:
     '''Class full of getting and formatting data'''
 
     def reportBUG(errorName:str, info = "No info") -> None:
@@ -17,7 +17,7 @@ class DfServicesModule:
         
         # Check for valid subjectName
         if subjectName not in ['Math', 'Economics', 'Physics']: 
-            DfServicesModule.reportBUG(
+            DfServices.reportBUG(
                 "subjectName is not correct", 
                 f"Year is {year}, Subject is {subjectName}")
             return None
@@ -29,7 +29,7 @@ class DfServicesModule:
         try:
             df = pd.read_csv(path, sep=" ")
         except Exception:
-            DfServicesModule.reportBUG(
+            DfServices.reportBUG(
                 "Can't parse", 
                 f"Year is {year}, subject is {subjectName}")
             return None
@@ -38,7 +38,7 @@ class DfServicesModule:
 
     def getYearSubjectDf(grade, year, subjectName) -> pd.DataFrame:
         '''Get DF filtered by grade, year and subjectname'''
-        df = DfServicesModule.getSubjectInfo(year, subjectName)
+        df = DfServices.getSubjectInfo(year, subjectName)
         return df[df['Grade'] == grade]
 
     def twoSeriesToSnsData(
@@ -54,16 +54,16 @@ class DfServicesModule:
 
     def getCohort_and_NextYearDf(grade_start : int, year_start : int, subjectName : str) -> tuple[pd.DataFrame, pd.DataFrame]:
         '''Returns df of prizes' cohort DF and next year DF'''
-        cohort_df = DfServicesModule.getYearSubjectDf(
+        cohort_df = DfServices.getYearSubjectDf(
             grade_start, year_start, subjectName)
-        nextYear_df = DfServicesModule.getYearSubjectDf(
+        nextYear_df = DfServices.getYearSubjectDf(
             grade_start + 1, year_start + 1, subjectName)
         return cohort_df, nextYear_df
 
     def getPrizesOthers(cohort_df : pd.DataFrame, nextYear_df : pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
         '''Input: Cohord DF and next year DF Output: DF with last year and DF with others'''
 
-        cohort_Prizes = cohort_df[cohort_df['Result'] == 'prize']
+        cohort_Prizes = cohort_df[cohort_df['Result'].isin(['prize', 'winner'])]
         cohort_Prizes_Names = set(cohort_Prizes['Name']) # set to check if in quickly  # noqa: F841
         
         prizesInNextYear = nextYear_df.query('Name in @cohort_Prizes_Names')
@@ -79,7 +79,7 @@ class DfServicesModule:
         year_start = year - 2
 
 					# Getting data
-        cohortDf, nextYearDf = DfServicesModule.getCohort_and_NextYearDf(
+        cohortDf, nextYearDf = DfServices.getCohort_and_NextYearDf(
             year_start = year_start, 
             grade_start = grade_start, 
             subjectName = subjectName)
@@ -108,14 +108,14 @@ class DfServicesModule:
     
     def getCompleteScatterData() -> pd.DataFrame:
         '''
-        uses DfServicesModule.getScaterData() to calculate percentiles for all grades, years, subjectNames
+        uses DfServices.getScatterData() to calculate percentiles for all grades, years, subjectNames
         result: perentiles DF (Name, percentiles year 1, percentiles year 2)
         '''
         to_concat = []
         for year in [23, 24]:
             for grade in [10, 11]:
                 for subjectName in ['Math', 'Economics', 'Physics']:
-                    to_concat.append(DfServicesModule.getScatterData(
+                    to_concat.append(DfServices.getScatterData(
                         grade, year, subjectName))
         
         return pd.concat(to_concat)
@@ -126,8 +126,8 @@ class DfServicesModule:
         year_start = year - 2 # for ex: 21-22 => year = 22 => year_start = 20
         
         # Get prizes and cohort data
-        cohort_df, nextYear_df = DfServicesModule.getCohort_and_NextYearDf(grade_start, year_start, subjectName)
-        prizesInNextYear, othersInNextYear = DfServicesModule.getPrizesOthers(cohort_df, nextYear_df)
+        cohort_df, nextYear_df = DfServices.getCohort_and_NextYearDf(grade_start, year_start, subjectName)
+        prizesInNextYear, othersInNextYear = DfServices.getPrizesOthers(cohort_df, nextYear_df)
         
         # Get its scores
         scoresPrizes = prizesInNextYear["Score"]
@@ -144,7 +144,7 @@ class DfServicesModule:
         for subjectName in ['Math', 'Economics', 'Physics']:
             for year in [23, 24]:
                 for grade in [10, 11]:
-                    meanData = DfServicesModule.getMeanData(grade, year, subjectName)
+                    meanData = DfServices.getMeanData(grade, year, subjectName)
                     tt_scoresPrizes = meanData.prizes
                     tt_scoresOthers = meanData.others
                     scoresPrizes += tt_scoresPrizes.tolist()
@@ -170,7 +170,7 @@ class StatTests:
     def isNormal(array1) -> bool:
         '''Check if normal using Shapiro-Wilk criteria for normality'''
         p_value = st.normaltest(array1).pvalue
-        if p_value > 0.05:
+        if p_value > 0.03:
             return True
         else:
             return False
@@ -184,7 +184,7 @@ class Visuals:
         plt.show()
     
     
-    def plotCI(array1 : pd.Series, array1Name : str, array2 : pd.Series, array2Name : str):
+    def plotCI(array1 : pd.Series, array1Name : str, array2 : pd.Series, array2Name : str, tTest = True):
         '''boxplot and graph of confidence intervals with T-Test'''
         # Basic statistics
         df = pd.DataFrame({array1Name:array1, array2Name:array2}).agg(['mean','std','count','sem']).transpose()
@@ -192,7 +192,11 @@ class Visuals:
 
         # Counting the 95% confidence interval:
         p = 0.95
-        K = st.t.ppf((1 + p) / 2, df['Mx'] - 1)
+        if not tTest:
+            # Means use Z-Test
+            K = st.norm.ppf((1 + p) / 2, df['Mx'] - 1)
+        else:
+            K = st.t.ppf((1 + p) / 2, df['Mx'] - 1)
         df['interval'] = K * df['SE']
 
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3, 3))
@@ -216,7 +220,7 @@ class Visuals:
     
     def makeScatterPlot(scatterData : pd.DataFrame) -> plt.Figure:
         '''
-        Input: DFServices.DfServicesModule getScatterData() or getCompleteScatterData()
+        Input: StatServices.DfServices getScatterData() or getCompleteScatterData()
         '''
         
 
@@ -268,13 +272,13 @@ class Percentiles:
         cohortDf = cohortDf.sort_values('Score', ascending=True)
         N = len(cohortDf)
         cohortDf['Percentile'] = [(i + 1) / N for i in range(N)]
-        return cohortDf[cohortDf['Result'] == 'prize']
+        return cohortDf[cohortDf['Result'].isin(['prize', 'winner'])]
 	
     def getPercentilesYear2(cohortDf, nextYearDf) -> pd.DataFrame:
 		# Calculating percentiles for Year2 
 		
         cohort_Prizes_Names = set(  # noqa: F841
-            cohortDf[cohortDf['Result'] == 'prize']['Name']) # set to check if in quickly  # noqa: F841
+            cohortDf[cohortDf['Result'].isin(['prize'])]['Name']) # set to check if in quickly  # noqa: F841
 
         # Joining
         prizesNextYear = nextYearDf.query('Name in @cohort_Prizes_Names')

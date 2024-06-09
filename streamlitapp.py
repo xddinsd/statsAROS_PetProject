@@ -8,14 +8,14 @@ from typing import List
 import sys
 sys.path.append("./Modules")
 import CohortStatistics
-from DfServices import DfServicesModule, Visuals
+from StatServices import DfServices, Visuals
 
 def getMeanStat(grade, year, subjectName):
     # Stat for hypotesis 1
     scatterPlotFig = Visuals.makeScatterPlot(scatterData = 
-        DfServicesModule.getScatterData(grade, year, subjectName))
+        DfServices.getScatterData(grade, year, subjectName))
     stat = CohortStatistics.cohortStat(
-        DfServicesModule.getMeanData(grade, year, subjectName))
+        DfServices.getMeanData(grade, year, subjectName))
     
     color = 'red' if grade == 10 else 'blue'
     
@@ -27,9 +27,9 @@ def getMeanStat(grade, year, subjectName):
 def getPercentileStat():
     # Stat for hypotesis 2
     scatterPlotFig = Visuals.makeScatterPlot(
-        scatterData = DfServicesModule.getCompleteScatterData())
+        scatterData = DfServices.getCompleteScatterData())
     stat = CohortStatistics.cohortStat(
-        DfServicesModule.getPercentileData())
+        DfServices.getPercentileData(), useZTest = True)
 
     color = 'rainbow'
     

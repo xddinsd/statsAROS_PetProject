@@ -5,14 +5,15 @@ import seaborn as sns
 from scipy import stats as st
 import statsmodels.api as sm
 from matplotlib import pyplot as plt
-from DfServices import DfServicesModule, Visuals, StatTests
+from StatServices import DfServices, Visuals, StatTests
 from typing import List
 from collections import namedtuple
+from statsmodels.stats.weightstats import ztest
 
-def cohortStat(data : namedtuple) -> namedtuple:
+def cohortStat(data : namedtuple, useZTest = False) -> namedtuple:
     ''' 
     Calculates mean/percentile stat for a cohort of prizes last year and cohort of others. 
-    Input: DFServices.DfServicesModule getPercentileData() and getMeanData()
+    Input: DFServices.DfServices getPercentileData() and getMeanData()
     Result: namedtuple('CohortResult', 'logs boolResult histPlotFig boxPlotFig qqOrCIPlotFig')'''
 
     logs : List[str] = [] # Contains all stat logs.
@@ -22,7 +23,7 @@ def cohortStat(data : namedtuple) -> namedtuple:
     
     # Making a histogramm
     histPlotFig, axs = plt.subplots(ncols=1)
-    sns.histplot(DfServicesModule.twoSeriesToSnsData(
+    sns.histplot(DfServices.twoSeriesToSnsData(
             scoresOthers.sample(n = scoresPrizes.size), 'Others', 
             scoresPrizes, 'Prizes'),
                 bins = 30, 
@@ -42,7 +43,7 @@ def cohortStat(data : namedtuple) -> namedtuple:
     
     # If normal and variances are close to each others -> use T-Test & KS-test
     # Othervise -> KS-test
-    
+
     # Check variances and normal:
     logs.append('Check criteria for a T-Test:')
     use_T_Test = True
@@ -57,11 +58,16 @@ def cohortStat(data : namedtuple) -> namedtuple:
     elif not StatTests.isVarCloseEOLevene(scoresOthers, scoresPrizes): # elif because levene's test assume that distribution is normal
         logs.append("     | Levene failed: Variances are not close to EO")
         use_T_Test = False
-    
-    
-    
-    
-    
+
+    # Interpreting results
+    if use_T_Test:
+        logs.append('      ...')
+        logs.append('     Passed! | Levene | KSTest for normality')
+        logs.append(' ')
+    else:
+        ZorT_TestResult = False
+        logs.append('     Failed | Levene | Shapiro-Wilk ')
+
     # Performing tests
         
     def printTestResult(p_value : float) -> bool:
@@ -72,27 +78,30 @@ def cohortStat(data : namedtuple) -> namedtuple:
         else:
             logs.append('Can\'t reject the H_0')
             return False
-            
-    # Performing a T-Test:
-    if use_T_Test:
-        logs.append('      ...')
-        logs.append('     Passed! | Levene | KSTest for normality')
-        logs.append(' ')
+    
+    # Performing a Z or T-Test
+    logs.append('')
+    if useZTest:
+        logs.append('Performing a Z-Test:')
+        p_value = ztest(scoresOthers.sample(n = scoresPrizes.size), 
+                            scoresPrizes,
+                            usevar='unequal')[1] # [1] is pvalue
+        # Interpreting the Z-Test results
+        ZorT_TestResult = printTestResult(p_value)
+    elif use_T_Test:
         logs.append('Performing a T-Test:')
         p_value = st.ttest_ind(scoresOthers.sample(n = scoresPrizes.size), 
                             scoresPrizes, 
                             equal_var=False
                                 ).pvalue # Sample because we need same samplesize for T-Test
         # Interpreting the T-Test results
-        TTestResult = printTestResult(p_value)
-    else:
-        TTestResult = False
-        logs.append('     Failed | Levene | Shapiro-Wilk ')
+        ZorT_TestResult = printTestResult(p_value)
+    
     
     # Performing a KS-test
     logs.append(' ')
     logs.append('Performing a KS-Test:')
-    p_value = st.ks_2samp(scoresOthers, scoresPrizes, alternative = 'greater').pvalue
+    p_value = st.ks_2samp(scoresOthers, scoresPrizes, alternative = 'greater', method='asymp').pvalue
 
     # Interpreting the KS-Test results
     KSResult = printTestResult(p_value)
@@ -100,12 +109,16 @@ def cohortStat(data : namedtuple) -> namedtuple:
     # Perfoming a boxplot and graph of qqPLOT for levene or confidence interval plot if possible 
     boxPlotFig, axs = plt.subplots(ncols=1)
     sns.boxplot(
-                            data = DfServicesModule.twoSeriesToSnsData(
+                            data = DfServices.twoSeriesToSnsData(
                                 scoresOthers, 'Others', scoresPrizes, 'Prizes last year')
                         )
     
-    if use_T_Test:
-        
+    if useZTest:
+        # Creating a CI-Plot
+        qqOrCIPlotFig = Visuals.plotCI(scoresOthers.sample(n = scoresPrizes.size), 'Non-prizes last year', 
+                                scoresPrizes, 'PRIZES last year', 
+                                tTest= False)
+    elif use_T_Test:
         # Creating a CI-Plot
         qqOrCIPlotFig = Visuals.plotCI(scoresOthers.sample(n = scoresPrizes.size), 'Non-prizes last year', 
                                 scoresPrizes, 'PRIZES last year')
@@ -126,7 +139,7 @@ def cohortStat(data : namedtuple) -> namedtuple:
         
     # Output the result data
     logs.append(' ')
-    if TTestResult or KSResult:
+    if ZorT_TestResult or KSResult:
         result = True
     else:
         result = 'Not defined'
